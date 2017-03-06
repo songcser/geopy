@@ -75,6 +75,7 @@ __all__ = (
     "get_geocoder_for_service",
     "ArcGIS",
     "Baidu",
+    "Gaode",
     "Bing",
     "DataBC",
     "GeocoderDotUS",
@@ -96,6 +97,7 @@ __all__ = (
 
 from geopy.geocoders.arcgis import ArcGIS
 from geopy.geocoders.baidu import Baidu
+from geopy.geocoders.gaode import GaoDe
 from geopy.geocoders.bing import Bing
 from geopy.geocoders.databc import DataBC
 from geopy.geocoders.dot_us import GeocoderDotUS
@@ -120,6 +122,7 @@ from geopy.exc import GeocoderNotFound
 SERVICE_TO_GEOCODER = {
     "arcgis": ArcGIS,
     "baidu": Baidu,
+    "gaode": GaoDe,
     "bing": Bing,
     "databc": DataBC,
     "google": GoogleV3,

@@ -75,7 +75,7 @@ __all__ = (
     "get_geocoder_for_service",
     "ArcGIS",
     "Baidu",
-    "Gaode",
+    "GaoDe",
     "Bing",
     "DataBC",
     "GeocoderDotUS",

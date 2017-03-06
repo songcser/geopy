@@ -71,7 +71,8 @@ class Baidu(Geocoder):
             self,
             query,
             exactly_one=True,
-            timeout=None
+            timeout=None,
+            city=None,
         ):
         """
         Geocode a location query.
@@ -92,6 +93,8 @@ class Baidu(Geocoder):
             'output': 'json',
             'address': self.format_string % query,
         }
+        if city:
+            params.update({'city': city})
 
         url = "?".join((self.api, urlencode(params)))
         logger.debug("%s.geocode: %s", self.__class__.__name__, url)

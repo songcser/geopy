@@ -52,7 +52,8 @@ class GaoDe(Geocoder):
             self,
             query,
             exactly_one=True,
-            timeout=None
+            timeout=None,
+            city=None,
         ):
         """
         Geocode a location query.
@@ -73,6 +74,8 @@ class GaoDe(Geocoder):
             'output': 'json',
             'address': self.format_string % query,
         }
+        if city:
+            params.update({'city': city})
         if not exactly_one:
             params.update({'batch': 'true'})
 
@@ -108,7 +111,7 @@ class GaoDe(Geocoder):
         logger.debug("%s.reverse: %s", self.__class__.__name__, url)
         return self._parse_reverse_json(
             self._call_geocoder(url, timeout=timeout),
-            params['location'].spilt(',')
+            params['location'].split(',')
         )
 
 
@@ -148,7 +151,7 @@ class GaoDe(Geocoder):
             return Location(location, (latitude, longitude), place)
 
         if exactly_one:
-            return parse_place(place)
+            return parse_place(place[0])
         else:
             return [parse_place(item) for item in place]
 

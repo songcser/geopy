@@ -1,6 +1,5 @@
-"""
-:class:`.Baidu` is the Baidu Maps geocoder.
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from geopy.compat import urlencode
 from geopy.geocoders.base import Geocoder, DEFAULT_TIMEOUT
@@ -13,13 +12,12 @@ from geopy.location import Location
 from geopy.util import logger
 
 
-__all__ = ("Baidu", )
+__all__ = ("Tencent", )
 
-
-class Baidu(Geocoder):
+class Tencent(Geocoder):
     """
-    Geocoder using the Baidu Maps v2 API. Documentation at:
-        http://developer.baidu.com/map/webservice-geocoding.htm
+    Geocoder using the Tencent Maps v1 API. Documentation at:
+        http://lbs.qq.com/webservice_v1/guide-geocoder.html
     """
 
     def __init__(
@@ -31,13 +29,13 @@ class Baidu(Geocoder):
             user_agent=None
         ):
         """
-        Initialize a customized Baidu geocoder using the v2 API.
+        Initialize a customized Tencent geocoder using the v1 API.
 
         .. versionadded:: 1.0.0
 
-        :param string api_key: The API key required by Baidu Map to perform
-            geocoding requests. API keys are managed through the Baidu APIs
-            console (http://lbsyun.baidu.com/apiconsole/key).
+        :param string api_key: The API key required by Tencent Map to perform
+            geocoding requests. API keys are managed through the Tencent APIs
+            console (http://lbs.qq.com/mykey.html).
 
         :param string scheme: Use 'https' or 'http' as the API URL's scheme.
             Default is http and only http support.
@@ -47,14 +45,13 @@ class Baidu(Geocoder):
             more information, see documentation on
             :class:`urllib2.ProxyHandler`.
         """
-        super(Baidu, self).__init__(
+        super(Tencent, self).__init__(
             scheme=scheme, timeout=timeout, proxies=proxies, user_agent=user_agent
         )
         self.api_key = api_key
         self.scheme = scheme
         self.doc = {}
-        self.api = 'http://api.map.baidu.com/geocoder/v2/'
-        self.search_api = 'http://api.map.baidu.com/place/v2/search'
+        self.api = 'http://apis.map.qq.com/ws/geocoder/v1/'
 
 
     @staticmethod
@@ -73,7 +70,6 @@ class Baidu(Geocoder):
             query,
             exactly_one=True,
             timeout=None,
-            city=None,
         ):
         """
         Geocode a location query.
@@ -90,44 +86,16 @@ class Baidu(Geocoder):
 
         """
         params = {
-            'ak': self.api_key,
+            'key': self.api_key,
             'output': 'json',
             'address': self.format_string % query,
         }
-        if city:
-            params.update({'city': city})
 
         url = "?".join((self.api, urlencode(params)))
         logger.debug("%s.geocode: %s", self.__class__.__name__, url)
         return self._parse_json(
             self._call_geocoder(url, timeout=timeout), exactly_one=exactly_one
         )
-
-    def search(self, query, city=None, bounds=None, location=None,
-               radius=None, tag=None, exactly_one=True, timeout=None):
-        params = {
-            'ak': self.api_key,
-            'output': 'json',
-            'query': self.format_string % query,
-            'scope': 2,
-        }
-        if city:
-            params.update({'region': city})
-        if bounds and location:
-            params.update({'bounds': "%s,%s" %
-                           (self._coerce_point_to_string(bounds),
-                            self._coerce_point_to_string(location))})
-        if location and radius:
-            params.update({'location': self._coerce_point_to_string(location),
-                           'radius': radius})
-        if tag:
-            params.update({'tag': tag})
-        url = "?".join((self.search_api, urlencode(params)))
-        logger.debug("%s.search: %s", self.__class__.__name__, url)
-        return self._parse_search_json(
-            self._call_geocoder(url, timeout=timeout), exactly_one=exactly_one
-        )
-
 
     def reverse(self, query, timeout=None):  # pylint: disable=W0221
         """
@@ -145,7 +113,7 @@ class Baidu(Geocoder):
 
         """
         params = {
-            'ak': self.api_key,
+            'key': self.api_key,
             'output': 'json',
             'location': self._coerce_point_to_string(query),
         }
@@ -165,33 +133,12 @@ class Baidu(Geocoder):
         """
         place = page.get('result')
 
-        location = place.get('formatted_address').encode('utf-8')
+        location = place['formatted_address']['recommend'].encode('utf-8')
         latitude = place['location']['lat']
         longitude = place['location']['lng']
 
         return Location(location, (latitude, longitude), place)
 
-    def _parse_search_json(self, page, exactly_one=True):
-        place = page.get('results', None)
-        if not place:
-            self._check_status(page.get('status'))
-            return []
-        def parse_place(place):
-            location = place.get('address')
-            if 'location' not in place:
-                return None
-            latitude = place['location']['lat']
-            longitude = place['location']['lng']
-            return Location(location, (latitude, longitude), place)
-
-        if exactly_one:
-            return parse_place(place[0])
-        else:
-            res = []
-            for item in place:
-                if parse_place(item):
-                    res.append(item)
-            return res
 
     def _parse_json(self, page, exactly_one=True):
         """
@@ -208,7 +155,7 @@ class Baidu(Geocoder):
             """
             Get the location, lat, lng from a single JSON place.
             """
-            location = place.get('level')
+            location = place.get('title')
             latitude = place['location']['lat']
             longitude = place['location']['lng']
             return Location(location, (latitude, longitude), place)
@@ -223,44 +170,26 @@ class Baidu(Geocoder):
         """
         Validates error statuses.
         """
-        if status == '0' or status == 0:
+        if status == 0:
             # When there are no results, just return.
             return
-        if status == '1' or status == 1:
+        if status == 110:
             raise GeocoderQueryError(
-                'Internal server error.'
+                u'请求来源未被授权.'
             )
-        elif status == '2' or status == 2:
+        elif status == 306:
             raise GeocoderQueryError(
-                'Invalid request.'
+                u'请求有护持信息请检查字符串.'
             )
-        elif status == '3' or status == 3:
+        elif status == 310:
             raise GeocoderAuthenticationFailure(
-                'Authentication failure.'
+                u'请求参数信息有误.'
             )
-        elif status == '4' or status == 4:
+        elif status == 311:
             raise GeocoderQuotaExceeded(
-                'Quota validate failure.'
-            )
-        elif status == '5' or status == 5:
-            raise GeocoderQueryError(
-                'AK Illegal or Not Exist.'
-            )
-        elif status == '101' or status == 101:
-            raise GeocoderQueryError(
-                'Your request was denied.'
-            )
-        elif status == '102' or status == 102:
-            raise GeocoderQueryError(
-                'IP/SN/SCODE/REFERER Illegal:'
-            )
-        elif status == '2xx':
-            raise GeocoderQueryError(
-                'Has No Privilleges.'
-            )
-        elif status == '3xx':
-            raise GeocoderQuotaExceeded(
-                'Quota Error.'
+                u'key格式错误.'
             )
         else:
             raise GeocoderQueryError('Unknown error')
+
+

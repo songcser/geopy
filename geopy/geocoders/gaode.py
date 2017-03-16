@@ -36,6 +36,7 @@ class GaoDe(Geocoder):
         self.scheme = scheme
         self.doc = {}
         self.api = 'http://restapi.amap.com/v3/geocode/'
+        self.search_api = 'http://restapi.amap.com/v3/place/text'
 
     @staticmethod
     def _format_components_param(components):
@@ -85,6 +86,20 @@ class GaoDe(Geocoder):
             self._call_geocoder(url, timeout=timeout), exactly_one=exactly_one
         )
 
+    def search(self, query, city=None, timeout=None, exactly_one=True):
+        params = {
+            'key': self.api_key,
+            'keywords': query,
+            'output': 'json',
+        }
+        if city:
+            params.update({'city': city})
+        url = '?'.join((self.search_api, urlencode(params)))
+        logger.debug("%s.search: %s", self.__class__.__name__, url)
+        return self._parse_search_json(
+            self._call_geocoder(url, timeout=timeout), exactly_one=exactly_one
+        )
+
     def reverse(self, query, timeout=None):  # pylint: disable=W0221
         """
         Given a point, find an address.
@@ -127,6 +142,25 @@ class GaoDe(Geocoder):
         longitude = point[0]
 
         return Location(location, (latitude, longitude), place)
+
+    def _parse_search_json(self, page, exactly_one=True):
+        place = page.get('pois')
+
+        if not place:
+            self._check_status(page.get('infocode'))
+            return None
+
+        def parse_place(place):
+            location = place.get('address')
+            coordinate = place.get('location').split(',')
+            longitude = coordinate[0]
+            latitude = coordinate[1]
+            return Location(location, (latitude, longitude), place)
+
+        if exactly_one:
+            return parse_place(place[0])
+        else:
+            return [parse_place(item) for item in place]
 
 
     def _parse_json(self, page, exactly_one=True):

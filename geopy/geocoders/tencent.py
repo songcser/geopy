@@ -70,6 +70,7 @@ class Tencent(Geocoder):
             query,
             exactly_one=True,
             timeout=None,
+            city=None,
         ):
         """
         Geocode a location query.

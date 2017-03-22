@@ -74,6 +74,7 @@ class Baidu(Geocoder):
             exactly_one=True,
             timeout=None,
             city=None,
+            ret_coordtype = None,
         ):
         """
         Geocode a location query.
@@ -96,6 +97,8 @@ class Baidu(Geocoder):
         }
         if city:
             params.update({'city': city})
+        if coordtype:
+            params.update({'ret_coordtype': coordtype})
 
         url = "?".join((self.api, urlencode(params)))
         logger.debug("%s.geocode: %s", self.__class__.__name__, url)
@@ -104,7 +107,8 @@ class Baidu(Geocoder):
         )
 
     def search(self, query, city=None, bounds=None, location=None,
-               radius=None, tag=None, exactly_one=True, timeout=None):
+               radius=None, tag=None, exactly_one=True, timeout=None,
+               ret_coordtype=None, coordtype=None):
         params = {
             'ak': self.api_key,
             'output': 'json',
@@ -122,6 +126,10 @@ class Baidu(Geocoder):
                            'radius': radius})
         if tag:
             params.update({'tag': tag})
+        if ret_coordtype:
+            params.update({'ret_coordtype': ret_coordtype})
+        if coordtype:
+            params.update({'coord_type': coordtype})
         url = "?".join((self.search_api, urlencode(params)))
         logger.debug("%s.search: %s", self.__class__.__name__, url)
         return self._parse_search_json(
@@ -129,7 +137,7 @@ class Baidu(Geocoder):
         )
 
 
-    def reverse(self, query, timeout=None):  # pylint: disable=W0221
+    def reverse(self, query, timeout=None, coordtype=None):  # pylint: disable=W0221
         """
         Given a point, find an address.
 
@@ -149,6 +157,8 @@ class Baidu(Geocoder):
             'output': 'json',
             'location': self._coerce_point_to_string(query),
         }
+        if coordtype:
+            params.update({'coordtype': coordtype})
 
         url = "?".join((self.api, urlencode(params)))
 
@@ -189,8 +199,9 @@ class Baidu(Geocoder):
         else:
             res = []
             for item in place:
-                if parse_place(item):
-                    res.append(item)
+                parse = parse_place(item)
+                if parse:
+                    res.append(parse)
             return res
 
     def _parse_json(self, page, exactly_one=True):

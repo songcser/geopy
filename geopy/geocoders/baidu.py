@@ -97,8 +97,8 @@ class Baidu(Geocoder):
         }
         if city:
             params.update({'city': city})
-        if coordtype:
-            params.update({'ret_coordtype': coordtype})
+        if ret_coordtype:
+            params.update({'ret_coordtype': ret_coordtype})
 
         url = "?".join((self.api, urlencode(params)))
         logger.debug("%s.geocode: %s", self.__class__.__name__, url)

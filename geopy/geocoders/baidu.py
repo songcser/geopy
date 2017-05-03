@@ -108,7 +108,7 @@ class Baidu(Geocoder):
 
     def search(self, query, city=None, bounds=None, location=None,
                radius=None, tag=None, exactly_one=True, timeout=None,
-               ret_coordtype=None, coordtype=None):
+               ret_coordtype=None, coordtype=None, city_limit=False):
         params = {
             'ak': self.api_key,
             'output': 'json',
@@ -130,6 +130,8 @@ class Baidu(Geocoder):
             params.update({'ret_coordtype': ret_coordtype})
         if coordtype:
             params.update({'coord_type': coordtype})
+        if city_limit:
+            params.update({'city_limit': 'true'})
         url = "?".join((self.search_api, urlencode(params)))
         logger.debug("%s.search: %s", self.__class__.__name__, url)
         return self._parse_search_json(

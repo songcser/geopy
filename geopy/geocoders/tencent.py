@@ -191,6 +191,6 @@ class Tencent(Geocoder):
                 u'key格式错误.'
             )
         else:
-            raise GeocoderQueryError('Unknown error')
+            raise GeocoderQueryError('Unknown error: %s' % status)
 
 
